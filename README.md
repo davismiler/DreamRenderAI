@@ -76,8 +76,8 @@ Make sure you have the following installed on your system:
 
 1.  **Clone the Repository**
     ```sh
-    git clone [https://github.com/your-username/dream-render.git](https://github.com/your-username/dream-render.git)
-    cd dream-render
+    git clone https://github.com/davismiler/DreamRenderAI.git
+    cd DreamRenderAI
     ```
 
 2.  **Install Dependencies**
@@ -99,8 +99,13 @@ This project requires an API key to connect to the image generation service.
     ```env
     # .env
     VITE_API_KEY=your_api_key_here
+    
+    # Optional: Override API base URL (defaults to /api in dev, https://api.infip.pro in production)
+    # VITE_API_BASE_URL=https://api.infip.pro
     ```
     > **Note**: This is a crucial step. The application will not be able to generate images without this key.
+    
+    > **Note**: In development mode, the app uses Vite's proxy (`/api`) which forwards to `https://api.infip.pro`. In production, it uses the direct URL. You can override this with `VITE_API_BASE_URL` if needed.
 
 ### Running the Application
 
@@ -155,10 +160,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 <div align="center">
   <p>
-    Designed & Developed by Donavalli Jayanth
+    Designed & Developed by davismiler
   </p>
   <p>
-    <a href="https://github.com/Jayanth0124" target="_blank">GitHub</a> • 
-    <a href="https://linkedin.com/in/jayanth-donavalli" target="_blank">LinkedIn</a>
+    <a href="https://github.com/davismiler" target="_blank">GitHub</a>
   </p>
 </div>

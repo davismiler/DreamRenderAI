@@ -20,7 +20,10 @@ const AIImageGenerator: React.FC = () => {
     if (!prompt.trim()) return;
     setLoading(true);
     const apiKey = import.meta.env.VITE_API_KEY;
-    const url = "/api/v1/images/generations";
+    // Use environment variable if set, otherwise use proxy in dev or direct URL in production
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
+      (import.meta.env.DEV ? '/api' : 'https://api.infip.pro');
+    const url = `${apiBaseUrl}/v1/images/generations`;
     const headers = { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" };
     const payload = { model: model, prompt: prompt, n: 1, size: size };
     try {
@@ -46,7 +49,10 @@ const AIImageGenerator: React.FC = () => {
     // This function's logic remains the same
     try {
       const imagePath = new URL(imageUrl).pathname;
-      const proxiedUrl = `/api${imagePath}`;
+      // Use environment variable if set, otherwise use proxy in dev or direct URL in production
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
+        (import.meta.env.DEV ? '/api' : 'https://api.infip.pro');
+      const proxiedUrl = `${apiBaseUrl}${imagePath}`;
       const response = await fetch(proxiedUrl);
       if (!response.ok) { throw new Error(`Failed to download image: ${response.statusText}`); }
       const blob = await response.blob();
@@ -64,7 +70,7 @@ const AIImageGenerator: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 text-gray-800">
+    <div className="min-h-screen text-foreground relative">
       {/* Updated: Responsive padding and vertical spacing */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         
@@ -72,14 +78,14 @@ const AIImageGenerator: React.FC = () => {
         {/* Updated: Responsive font sizes and margins */}
         <header className="text-center mb-16 md:mb-20">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Sparkles className="w-6 h-6 text-purple-400" />
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight">
+            <Sparkles className="w-6 h-6 text-blue-400" />
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-light tracking-tight ai-gradient-text">
             Dream Render
             </h1>
             <Sparkles className="w-6 h-6 text-pink-400" />
           </div>
-          <div className="w-24 h-0.5 bg-gradient-to-r from-purple-300 via-pink-300 to-purple-300 mx-auto mb-6 rounded-full"></div>
-          <p className="text-base sm:text-lg text-gray-600 font-light max-w-xl mx-auto leading-relaxed">
+          <div className="w-24 h-0.5 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mx-auto mb-6 rounded-full"></div>
+          <p className="text-base sm:text-lg text-gray-300 font-light max-w-xl mx-auto leading-relaxed">
             Create beautiful imagery with the power of artificial intelligence
           </p>
         </header>
@@ -87,12 +93,12 @@ const AIImageGenerator: React.FC = () => {
         {/* Generation Form */}
         {/* Updated: Responsive margins and padding */}
         <div className="max-w-2xl mx-auto mb-16 md:mb-20">
-          <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 sm:p-8 md:p-10 shadow-lg border border-white/50">
+          <div className="glass-card rounded-3xl p-6 sm:p-8 md:p-10">
             <div className="space-y-6">
               
               {/* Prompt Input */}
               <div>
-                <label htmlFor="prompt-input" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="prompt-input" className="block text-sm font-medium text-gray-300 mb-2">
                   Describe your vision
                 </label>
                 <input
@@ -101,7 +107,7 @@ const AIImageGenerator: React.FC = () => {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="A serene landscape with cherry blossoms..."
-                  className="w-full text-base sm:text-lg placeholder-gray-400 bg-white/80 border-2 border-purple-100 focus:border-purple-300 focus:ring-2 focus:ring-purple-200 focus:outline-none rounded-2xl px-5 py-3.5 transition-all duration-300 shadow-sm focus:shadow-md"
+                  className="w-full text-base sm:text-lg placeholder-gray-500 bg-gray-800/50 border-2 border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none rounded-2xl px-5 py-3.5 transition-all duration-300 text-foreground"
                   disabled={loading}
                   onKeyPress={(e) => e.key === 'Enter' && generateImage()}
                 />
@@ -110,38 +116,34 @@ const AIImageGenerator: React.FC = () => {
               {/* Controls */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
-                  <label htmlFor="size-select" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="size-select" className="block text-sm font-medium text-gray-300 mb-2">
                     Image Size
                   </label>
                   <select
                     id="size-select"
                     value={size}
                     onChange={(e) => setSize(e.target.value)}
-                    className="w-full bg-white/80 border-2 border-pink-100 focus:border-pink-300 focus:ring-2 focus:ring-pink-200 focus:outline-none py-3.5 px-5 rounded-2xl transition-all duration-300 shadow-sm focus:shadow-md appearance-none"
+                    className="w-full bg-gray-800/50 border-2 border-gray-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none py-3.5 px-5 rounded-2xl transition-all duration-300 text-foreground appearance-none"
                     disabled={loading}
                   >
-                    
-                     <option value="1024x1024">1024 × 1024</option>
--                    <option value="2048x2048">2048 × 2048</option>
-+                    <option value="1792x1024">1792 × 1024</option>
-+                    <option value="1024x1792">1024 × 1792</option>
+                    <option value="1024x1024">1024 × 1024</option>
+                    <option value="1792x1024">1792 × 1024</option>
+                    <option value="1024x1792">1024 × 1792</option>
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="model-select" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="model-select" className="block text-sm font-medium text-gray-300 mb-2">
                     AI Model
                   </label>
                   <select
                     id="model-select"
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
-                    className="w-full bg-white/80 border-2 border-pink-100 focus:border-pink-300 focus:ring-2 focus:ring-pink-200 focus:outline-none py-3.5 px-5 rounded-2xl transition-all duration-300 shadow-sm focus:shadow-md appearance-none"
+                    className="w-full bg-gray-800/50 border-2 border-gray-700 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 focus:outline-none py-3.5 px-5 rounded-2xl transition-all duration-300 text-foreground appearance-none"
                     disabled={loading}
                   >
                     <option value="img3">Imagen 3</option>
                     <option value="img4">Imagen 4</option>
-                    
-                    
                   </select>
                 </div>
               </div>
@@ -152,7 +154,7 @@ const AIImageGenerator: React.FC = () => {
                 <button
                   onClick={generateImage}
                   disabled={loading || !prompt.trim()}
-                  className="w-full sm:w-auto inline-flex items-center justify-center bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-white font-medium text-base py-3.5 px-10 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
+                  className="w-full sm:w-auto inline-flex items-center justify-center ai-gradient hover:opacity-90 text-white font-medium text-base py-3.5 px-10 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   {loading ? 'Generating...' : 'Generate Image'}
@@ -165,13 +167,13 @@ const AIImageGenerator: React.FC = () => {
         {/* Loading State */}
         {loading && (
           <div className="text-center mb-12">
-            <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-white/50 max-w-md mx-auto">
+            <div className="glass-card rounded-3xl p-8 max-w-md mx-auto">
               <div className="flex items-center justify-center gap-3 mb-4">
-                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-                <span className="text-lg font-light text-gray-700">Creating your masterpiece</span>
+                <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+                <span className="text-lg font-light text-gray-300">Creating your masterpiece</span>
               </div>
-              <div className="w-full h-2 bg-purple-100 mx-auto rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-purple-400 to-pink-400 animate-pulse rounded-full"></div>
+              <div className="w-full h-2 bg-gray-700 mx-auto rounded-full overflow-hidden">
+                <div className="h-full ai-gradient animate-pulse rounded-full"></div>
               </div>
             </div>
           </div>
@@ -181,34 +183,34 @@ const AIImageGenerator: React.FC = () => {
         {images.length > 0 && (
           <div>
             <div className="text-center mb-12">
-              <h3 className="text-3xl font-light mb-4">
+              <h3 className="text-3xl font-light mb-4 ai-gradient-text">
                 Your Creations
               </h3>
-              <div className="w-16 h-0.5 bg-gradient-to-r from-purple-300 to-pink-300 mx-auto rounded-full"></div>
+              <div className="w-16 h-0.5 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mx-auto rounded-full"></div>
             </div>
             
             {/* Updated: Responsive grid gaps */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {images.map((image) => (
-                <div key={image.id} className="group">
-                  <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-4 sm:p-5 shadow-lg border border-white/50 hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1">
+                <div key={image.id} className="group glowing-card">
+                  <div className="glass-card rounded-3xl p-4 sm:p-5 hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1">
                     <div className="aspect-square relative overflow-hidden rounded-2xl mb-4">
                       <img
                         src={image.url}
                         alt={image.prompt}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                     </div>
                     
                     <div className="space-y-3">
-                      <p className="text-gray-600 font-light text-sm line-clamp-2 leading-relaxed">
+                      <p className="text-gray-300 font-light text-sm line-clamp-2 leading-relaxed">
                         {image.prompt}
                       </p>
                       
                       <button
                         onClick={() => downloadImage(image.url, image.prompt)}
-                        className="flex items-center gap-2 text-purple-500 hover:text-purple-600 transition-colors duration-300 text-sm font-medium group/button"
+                        className="flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors duration-300 text-sm font-medium group/button"
                       >
                         <Download className="w-4 h-4 group-hover/button:animate-bounce" />
                         Download
@@ -224,12 +226,12 @@ const AIImageGenerator: React.FC = () => {
         {/* Empty State */}
         {images.length === 0 && !loading && (
           <div className="text-center py-12">
-            <div className="bg-white/50 backdrop-blur-sm rounded-3xl p-8 sm:p-12 shadow-lg border border-white/50 max-w-lg mx-auto">
-              <h3 className="text-2xl font-light mb-4">
+            <div className="glass-card rounded-3xl p-8 sm:p-12 max-w-lg mx-auto">
+              <h3 className="text-2xl font-light mb-4 ai-gradient-text">
                 Ready to Create
               </h3>
-              <div className="w-12 h-0.5 bg-gradient-to-r from-purple-300 to-pink-300 mx-auto mb-6 rounded-full"></div>
-              <p className="text-gray-600 font-light leading-relaxed">
+              <div className="w-12 h-0.5 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mx-auto mb-6 rounded-full"></div>
+              <p className="text-gray-300 font-light leading-relaxed">
                 Enter your creative vision above and let AI transform your ideas into beautiful imagery
               </p>
             </div>
