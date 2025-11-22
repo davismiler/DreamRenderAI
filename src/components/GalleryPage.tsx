@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { galleryImages } from '../data/gallery-data';
 import { Camera } from 'lucide-react';
 
@@ -26,7 +26,12 @@ const GalleryPage: React.FC = () => {
                   <img
                     src={image.imageUrl}
                     alt={image.prompt}
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    onError={(e) => {
+                      console.error('Image load error:', image.imageUrl);
+                      e.currentTarget.src = '/placeholder.svg';
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                 </div>
@@ -44,4 +49,4 @@ const GalleryPage: React.FC = () => {
   );
 };
 
-export default GalleryPage;
+export default memo(GalleryPage);

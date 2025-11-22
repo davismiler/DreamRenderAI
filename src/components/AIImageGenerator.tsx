@@ -1,73 +1,129 @@
 // src/components/AIImageGenerator.tsx
-import React, { useState } from 'react';
-import { Download, Loader2, Sparkles } from 'lucide-react';
-
-interface GeneratedImage {
-  id: string;
-  url: string;
-  prompt: string;
-}
+import React, { useState, useCallback, useMemo } from 'react';
+import { Download, Loader2, Sparkles, X, AlertCircle } from 'lucide-react';
+import { useImageGeneration, GeneratedImage } from '../hooks/useImageGeneration';
+import { getApiBaseUrl, handleApiError, fetchWithTimeout } from '../utils/api';
+import { validatePrompt, validateImageSize, validateModel } from '../utils/validation';
 
 const AIImageGenerator: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState('1024x1024');
   const [model, setModel] = useState('img3');
-  const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState<GeneratedImage[]>([]);
+  const { images, loading, error, setLoading, setError, addImage, clearError } = useImageGeneration();
 
-  const generateImage = async () => {
-    // This function's logic remains the same
-    if (!prompt.trim()) return;
-    setLoading(true);
+  const generateImage = useCallback(async () => {
+    // Clear previous errors
+    clearError();
+    
+    // Validate inputs
+    const promptValidation = validatePrompt(prompt);
+    if (!promptValidation.isValid) {
+      setError(promptValidation.error || 'Invalid prompt');
+      return;
+    }
+    
+    const sizeValidation = validateImageSize(size);
+    if (!sizeValidation.isValid) {
+      setError(sizeValidation.error || 'Invalid size');
+      return;
+    }
+    
+    const modelValidation = validateModel(model);
+    if (!modelValidation.isValid) {
+      setError(modelValidation.error || 'Invalid model');
+      return;
+    }
+    
+    // Check API key
     const apiKey = import.meta.env.VITE_API_KEY;
-    // Use environment variable if set, otherwise use proxy in dev or direct URL in production
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
-      (import.meta.env.DEV ? '/api' : 'https://api.infip.pro');
+    if (!apiKey) {
+      setError('API key is missing. Please check your .env file.');
+      return;
+    }
+    
+    setLoading(true);
+    const apiBaseUrl = getApiBaseUrl();
     const url = `${apiBaseUrl}/v1/images/generations`;
-    const headers = { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" };
-    const payload = { model: model, prompt: prompt, n: 1, size: size };
+    const headers = { 
+      "Authorization": `Bearer ${apiKey}`, 
+      "Content-Type": "application/json" 
+    };
+    const payload = { model, prompt: prompt.trim(), n: 1, size };
+    
     try {
-      const response = await fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(payload) });
+      const response = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      }, 60000); // 60 second timeout
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
       const data = await response.json();
       if (data.data && data.data.length > 0) {
-        const newImage: GeneratedImage = { id: Date.now().toString(), url: data.data[0].url, prompt: prompt };
-        setImages(prev => [newImage, ...prev]);
+        const newImage: GeneratedImage = {
+          id: Date.now().toString(),
+          url: data.data[0].url,
+          prompt: prompt.trim(),
+          timestamp: Date.now(),
+        };
+        addImage(newImage);
+        setPrompt(''); // Clear prompt after successful generation
+      } else {
+        setError('No image data received from the API.');
       }
     } catch (error) {
+      const apiError = handleApiError(error);
+      setError(apiError.message);
       console.error('Error generating image:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [prompt, size, model, setLoading, setError, clearError, addImage]);
 
-  const downloadImage = async (imageUrl: string, prompt: string) => {
-    // This function's logic remains the same
+  const downloadImage = useCallback(async (imageUrl: string, prompt: string) => {
     try {
       const imagePath = new URL(imageUrl).pathname;
-      // Use environment variable if set, otherwise use proxy in dev or direct URL in production
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 
-        (import.meta.env.DEV ? '/api' : 'https://api.infip.pro');
+      const apiBaseUrl = getApiBaseUrl();
       const proxiedUrl = `${apiBaseUrl}${imagePath}`;
-      const response = await fetch(proxiedUrl);
-      if (!response.ok) { throw new Error(`Failed to download image: ${response.statusText}`); }
+      
+      const response = await fetchWithTimeout(proxiedUrl, {
+        method: 'GET',
+      }, 30000); // 30 second timeout for downloads
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download image: ${response.statusText}`);
+      }
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `ai-generated-${prompt.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '-')}.jpg`;
+      link.download = `ai-generated-${prompt.slice(0, 30).replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
+      const apiError = handleApiError(error);
+      setError(`Download failed: ${apiError.message}`);
       console.error('Error downloading image:', error);
     }
-  };
+  }, [setError]);
+  
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !loading && prompt.trim()) {
+      generateImage();
+    }
+  }, [generateImage, loading, prompt]);
+  
+  const isFormValid = useMemo(() => {
+    return prompt.trim().length >= 3 && !loading;
+  }, [prompt, loading]);
 
   return (
     <div className="min-h-screen text-foreground relative">
@@ -109,7 +165,8 @@ const AIImageGenerator: React.FC = () => {
                   placeholder="A serene landscape with cherry blossoms..."
                   className="w-full text-base sm:text-lg placeholder-gray-500 bg-gray-800/50 border-2 border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none rounded-2xl px-5 py-3.5 transition-all duration-300 text-foreground"
                   disabled={loading}
-                  onKeyPress={(e) => e.key === 'Enter' && generateImage()}
+                  onKeyPress={handleKeyPress}
+                  maxLength={1000}
                 />
               </div>
 
@@ -153,7 +210,7 @@ const AIImageGenerator: React.FC = () => {
               <div className="pt-4">
                 <button
                   onClick={generateImage}
-                  disabled={loading || !prompt.trim()}
+                  disabled={!isFormValid}
                   className="w-full sm:w-auto inline-flex items-center justify-center ai-gradient hover:opacity-90 text-white font-medium text-base py-3.5 px-10 rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
@@ -163,6 +220,27 @@ const AIImageGenerator: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="max-w-2xl mx-auto mb-6">
+            <div className="glass-card rounded-2xl p-4 border border-red-500/30 bg-red-500/10">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-red-300 text-sm font-medium">{error}</p>
+                </div>
+                <button
+                  onClick={clearError}
+                  className="text-red-400 hover:text-red-300 transition-colors"
+                  aria-label="Dismiss error"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -198,7 +276,12 @@ const AIImageGenerator: React.FC = () => {
                       <img
                         src={image.url}
                         alt={image.prompt}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        onError={(e) => {
+                          console.error('Image load error:', image.url);
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
                       />
                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
                     </div>

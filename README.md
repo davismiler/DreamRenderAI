@@ -100,12 +100,17 @@ This project requires an API key to connect to the image generation service.
     # .env
     VITE_API_KEY=your_api_key_here
     
-    # Optional: Override API base URL (defaults to /api in dev, https://api.infip.pro in production)
+    # Optional: Override API base URL
+    # In development: defaults to /api (Vite proxy)
+    # In production: defaults to https://api.infip.pro (direct URL to avoid CORS)
     # VITE_API_BASE_URL=https://api.infip.pro
     ```
     > **Note**: This is a crucial step. The application will not be able to generate images without this key.
     
-    > **Note**: In development mode, the app uses Vite's proxy (`/api`) which forwards to `https://api.infip.pro`. In production, it uses the direct URL. You can override this with `VITE_API_BASE_URL` if needed.
+    > **Note**: 
+    - **Development**: The app uses Vite's proxy (`/api`) which forwards to `https://api.infip.pro` to avoid CORS issues.
+    - **Production**: The app uses the direct API URL (`https://api.infip.pro`) since Vite proxy doesn't work in production builds. Make sure the API server allows CORS requests from your domain.
+    - You can override the API URL with `VITE_API_BASE_URL` if needed.
 
 ### Running the Application
 

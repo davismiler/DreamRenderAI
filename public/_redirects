@@ -1,1 +1,4 @@
-/api/* https://api.infip.pro/:splat    200
+# Note: Netlify redirects don't work well for POST requests with CORS
+# The app will use direct API URL (https://api.infip.pro) in production
+# This redirect is kept as a fallback but may not work for all request types
+/api/* https://api.infip.pro/:splat 200

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Sparkles, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import landingImage from '../assets/images/landing1.webp';
@@ -71,4 +71,5 @@ const HomePage: React.FC = () => {
     </div>
   );
 };
-export default HomePage;
+
+export default memo(HomePage);
